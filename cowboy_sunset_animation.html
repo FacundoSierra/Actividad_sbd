@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cowboy Sunset Desert Town Animation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .container {
+            text-align: center;
+        }
+        
+        canvas {
+            border: 2px solid #8B4513;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.3);
+        }
+        
+        h1 {
+            color: #FFA500;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        
+        .controls {
+            margin-top: 20px;
+            color: #FFA500;
+        }
+        
+        button {
+            background: #8B4513;
+            color: #FFA500;
+            border: 2px solid #FFA500;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #FFA500;
+            color: #8B4513;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤠 Cowboy Sunset Desert Town 🌅</h1>
+        <canvas id="animationCanvas" width="1200" height="600"></canvas>
+        <div class="controls">
+            <button onclick="toggleAnimation()">⏸️ Pause/Play</button>
+            <button onclick="resetAnimation()">🔄 Reset</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('animationCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let animationId;
+        let isPlaying = true;
+        let time = 0;
+        
+        // Animation parameters
+        const animationDuration = 8000; // 8 seconds for full loop
+        const sunStartY = 80;
+        const sunEndY = 120;
+        const cloudSpeed = 0.5;
+        const heatwaveIntensity = 15;
+        const breezeIntensity = 3;
+        
+        // Cloud positions
+        const clouds = [
+            { x: 100, y: 50, size: 40, speed: 0.3 },
+            { x: 300, y: 80, size: 30, speed: 0.4 },
+            { x: 600, y: 60, size: 35, speed: 0.35 },
+            { x: 900, y: 70, size: 45, speed: 0.25 }
+        ];
+        
+        // Cactus positions
+        const cacti = [
+            { x: 150, y: 450, height: 80, sway: 0 },
+            { x: 200, y: 470, height: 60, sway: 0 },
+            { x: 800, y: 460, height: 90, sway: 0 },
+            { x: 850, y: 480, height: 70, sway: 0 },
+            { x: 950, y: 465, height: 75, sway: 0 }
+        ];
+        
+        function drawSky() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+            gradient.addColorStop(0, '#FF6B35'); // Deep orange-red
+            gradient.addColorStop(0.3, '#FF8C42'); // Orange
+            gradient.addColorStop(0.7, '#FFB347'); // Light orange
+            gradient.addColorStop(1, '#FFD700'); // Yellow
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, 200);
+        }
+        
+        function drawSun(time) {
+            const progress = (time % animationDuration) / animationDuration;
+            const sunY = sunStartY + (sunEndY - sunStartY) * progress;
+            
+            // Sun glow
+            const glowGradient = ctx.createRadialGradient(600, sunY, 0, 600, sunY, 80);
+            glowGradient.addColorStop(0, 'rgba(255, 255, 0, 0.8)');
+            glowGradient.addColorStop(0.7, 'rgba(255, 255, 0, 0.4)');
+            glowGradient.addColorStop(1, 'rgba(255, 255, 0, 0)');
+            
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(600, sunY, 80, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Sun core
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(600, sunY, 40, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawMountains() {
+            // Background mountains
+            ctx.fillStyle = '#4A148C';
+            ctx.beginPath();
+            ctx.moveTo(0, 200);
+            ctx.lineTo(200, 150);
+            ctx.lineTo(400, 180);
+            ctx.lineTo(600, 120);
+            ctx.lineTo(800, 160);
+            ctx.lineTo(1000, 140);
+            ctx.lineTo(1200, 170);
+            ctx.lineTo(1200, 200);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Foreground mountains
+            ctx.fillStyle = '#6A1B9A';
+            ctx.beginPath();
+            ctx.moveTo(0, 200);
+            ctx.lineTo(150, 160);
+            ctx.lineTo(300, 190);
+            ctx.lineTo(450, 150);
+            ctx.lineTo(600, 100);
+            ctx.lineTo(750, 170);
+            ctx.lineTo(900, 130);
+            ctx.lineTo(1050, 180);
+            ctx.lineTo(1200, 150);
+            ctx.lineTo(1200, 200);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function drawClouds(time) {
+            ctx.fillStyle = 'rgba(255, 200, 150, 0.7)';
+            
+            clouds.forEach((cloud, index) => {
+                const x = (cloud.x + time * cloud.speed * cloudSpeed) % (canvas.width + 100) - 50;
+                
+                // Draw cloud with multiple circles
+                ctx.beginPath();
+                ctx.arc(x, cloud.y, cloud.size * 0.6, 0, Math.PI * 2);
+                ctx.arc(x + cloud.size * 0.4, cloud.y, cloud.size * 0.8, 0, Math.PI * 2);
+                ctx.arc(x + cloud.size * 0.8, cloud.y, cloud.size * 0.6, 0, Math.PI * 2);
+                ctx.arc(x + cloud.size * 0.2, cloud.y - cloud.size * 0.2, cloud.size * 0.7, 0, Math.PI * 2);
+                ctx.arc(x + cloud.size * 0.6, cloud.y - cloud.size * 0.3, cloud.size * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        function drawDesert() {
+            const gradient = ctx.createLinearGradient(0, 200, 0, 400);
+            gradient.addColorStop(0, '#D2691E'); // Saddle brown
+            gradient.addColorStop(1, '#F4A460'); // Sandy brown
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 200, canvas.width, 200);
+        }
+        
+        function drawHeatwave(time) {
+            const progress = (time % animationDuration) / animationDuration;
+            const waveOffset = Math.sin(progress * Math.PI * 4) * heatwaveIntensity;
+            
+            ctx.save();
+            ctx.globalAlpha = 0.1;
+            
+            for (let i = 0; i < 10; i++) {
+                const y = 250 + i * 15;
+                const wave = Math.sin((time * 0.01 + i * 0.5) % (Math.PI * 2)) * waveOffset;
+                
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, y + wave);
+                
+                for (let x = 0; x < canvas.width; x += 20) {
+                    const waveX = Math.sin((time * 0.02 + x * 0.01 + i * 0.3) % (Math.PI * 2)) * 5;
+                    ctx.lineTo(x, y + wave + waveX);
+                }
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawFence() {
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 3;
+            
+            // Horizontal rails
+            ctx.beginPath();
+            ctx.moveTo(0, 350);
+            ctx.lineTo(canvas.width, 350);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(0, 380);
+            ctx.lineTo(canvas.width, 380);
+            ctx.stroke();
+            
+            // Vertical posts
+            for (let x = 0; x < canvas.width; x += 60) {
+                ctx.beginPath();
+                ctx.moveTo(x, 340);
+                ctx.lineTo(x, 390);
+                ctx.stroke();
+            }
+        }
+        
+        function drawBuildings() {
+            // Left side buildings
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(100, 320, 80, 80);
+            ctx.fillRect(200, 330, 70, 70);
+            ctx.fillRect(300, 325, 75, 75);
+            
+            // Right side buildings
+            ctx.fillRect(700, 315, 85, 85);
+            ctx.fillRect(800, 330, 70, 70);
+            ctx.fillRect(900, 320, 80, 80);
+            
+            // Building details
+            ctx.fillStyle = '#654321';
+            // Roofs
+            ctx.fillRect(100, 320, 80, 10);
+            ctx.fillRect(200, 330, 70, 10);
+            ctx.fillRect(300, 325, 75, 10);
+            ctx.fillRect(700, 315, 85, 10);
+            ctx.fillRect(800, 330, 70, 10);
+            ctx.fillRect(900, 320, 80, 10);
+            
+            // Windows
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(115, 340, 15, 20);
+            ctx.fillRect(215, 350, 15, 20);
+            ctx.fillRect(315, 345, 15, 20);
+            ctx.fillRect(715, 335, 15, 20);
+            ctx.fillRect(815, 350, 15, 20);
+            ctx.fillRect(915, 340, 15, 20);
+            
+            // Signs
+            ctx.fillStyle = '#DC143C';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText('SALOON', 105, 310);
+            ctx.fillText('HOTEL', 815, 310);
+        }
+        
+        function drawCacti(time) {
+            cacti.forEach((cactus, index) => {
+                const progress = (time % animationDuration) / animationDuration;
+                const sway = Math.sin(progress * Math.PI * 2 + index) * breezeIntensity;
+                
+                ctx.save();
+                ctx.translate(cactus.x, cactus.y);
+                ctx.rotate(sway * 0.01);
+                
+                // Cactus body
+                ctx.fillStyle = '#228B22';
+                ctx.strokeStyle = '#006400';
+                ctx.lineWidth = 2;
+                
+                // Main trunk
+                ctx.fillRect(-8, 0, 16, cactus.height);
+                ctx.strokeRect(-8, 0, 16, cactus.height);
+                
+                // Arms
+                if (cactus.height > 70) {
+                    ctx.fillRect(-8, 20, 20, 12);
+                    ctx.strokeRect(-8, 20, 20, 12);
+                    ctx.fillRect(-8, 40, 15, 10);
+                    ctx.strokeRect(-8, 40, 15, 10);
+                }
+                
+                if (cactus.height > 60) {
+                    ctx.fillRect(0, 30, 20, 12);
+                    ctx.strokeRect(0, 30, 20, 12);
+                }
+                
+                ctx.restore();
+            });
+        }
+        
+        function drawBarrels() {
+            ctx.fillStyle = '#8B4513';
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 2;
+            
+            // Left barrel
+            ctx.beginPath();
+            ctx.ellipse(150, 420, 20, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Right barrel
+            ctx.beginPath();
+            ctx.ellipse(950, 425, 20, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        function drawVegetation(time) {
+            const progress = (time % animationDuration) / animationDuration;
+            
+            ctx.fillStyle = '#228B22';
+            ctx.strokeStyle = '#006400';
+            ctx.lineWidth = 1;
+            
+            // Small bushes scattered around
+            for (let i = 0; i < 15; i++) {
+                const x = (i * 87) % canvas.width;
+                const y = 400 + Math.sin(i * 0.5) * 20;
+                const sway = Math.sin(progress * Math.PI * 2 + i) * breezeIntensity * 0.5;
+                
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(sway * 0.01);
+                
+                ctx.beginPath();
+                ctx.arc(0, 0, 8 + Math.sin(i) * 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+        }
+        
+        function animate() {
+            if (!isPlaying) return;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw scene layers
+            drawSky();
+            drawSun(time);
+            drawMountains();
+            drawClouds(time);
+            drawDesert();
+            drawHeatwave(time);
+            drawFence();
+            drawBuildings();
+            drawCacti(time);
+            drawBarrels();
+            drawVegetation(time);
+            
+            // Update time for seamless loop
+            time += 16; // 60 FPS
+            if (time >= animationDuration) {
+                time = 0; // Reset for seamless loop
+            }
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        function toggleAnimation() {
+            isPlaying = !isPlaying;
+            if (isPlaying) {
+                animate();
+            } else {
+                cancelAnimationFrame(animationId);
+            }
+        }
+        
+        function resetAnimation() {
+            time = 0;
+            if (isPlaying) {
+                cancelAnimationFrame(animationId);
+                animate();
+            }
+        }
+        
+        // Start animation
+        animate();
+        
+        // Pause animation when tab is not visible
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                cancelAnimationFrame(animationId);
+            } else if (isPlaying) {
+                animate();
+            }
+        });
+    </script>
+</body>
+</html>
